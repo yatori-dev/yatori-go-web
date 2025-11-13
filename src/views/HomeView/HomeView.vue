@@ -130,9 +130,87 @@ export default defineComponent({
 #logoImg {
   width: 40px;
   height: 40px;
-  border-radius: 20px; /* 半径=高度一半 */
+  border-radius: 50%;
   object-fit: cover;
+  position: relative;
+  z-index: 1;
+
+  /* LOGO 本体柔光 */
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+  transition: 0.3s ease-out; /* ⬅ 关键，hover 过渡更丝滑 */
 }
+
+/* 外发光渐变环 + 呼吸灯 */
+#logoImg::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+
+  /* RGB 霓虹环 */
+  background: conic-gradient(
+      #ff00ff,
+      #00ffff,
+      #00ff00,
+      #ffff00,
+      #ff8800,
+      #ff00ff
+  );
+
+  filter: blur(10px);
+  opacity: 0.8;
+  z-index: -1;
+
+  /* 旋转 + 呼吸 */
+  animation: neon-rotate 3s linear infinite,
+  neon-breath 2.2s ease-in-out infinite;
+
+  transition: 0.35s ease-out; /* ⬅ 用于 hover 增强 */
+}
+
+/* RGB 光环旋转 */
+@keyframes neon-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 呼吸灯（节奏律动） */
+@keyframes neon-breath {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+    filter: blur(8px);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+    filter: blur(12px);
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+    filter: blur(8px);
+  }
+}
+
+/* ✨ 鼠标悬停特效（核心重点） */
+#logoImg:hover {
+  transform: scale(1.12); /* LOGO 微微放大 */
+  box-shadow:
+      0 0 15px rgba(255, 255, 255, 0.7),
+      0 0 25px rgba(0, 153, 255, 0.8),
+      0 0 35px rgba(0, 153, 255, 0.6);
+}
+
+#logoImg:hover::before {
+  transform: scale(1.25); /* 光环外扩 */
+  opacity: 1; /* 更亮 */
+  filter: blur(15px); /* 模糊加强形成更强 glow 感 */
+}
+
 
 
 </style>
