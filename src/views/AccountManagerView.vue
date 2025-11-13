@@ -49,6 +49,7 @@
       ok-text="添加"
       cancel-text="取消"
       @ok="addAccount"
+      :confirm-loading="addLoading"
   >
     <a-form layout="vertical">
 
@@ -81,21 +82,16 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
+import { addUser } from '../api/system/user';
 
 const router = useRouter();
 
-/***********************
- * 账号类型 → 中文映射表
- ***********************/
 const accountTypeText: Record<string, string> = {
   XUEXITONG: '学习通',
   YINGHUA: '英华学堂',
   ENAEA: '学习公社',
 };
 
-/***********************
- * 账号数据
- ***********************/
 const accounts = ref([
   { id: '114514', accountType: 'XUEXITONG', account: '123', password: '123456' },
   { id: '223344', accountType: 'YINGHUA', account: '123', password: '888888' },
@@ -104,24 +100,15 @@ const accounts = ref([
   { id: '111222', accountType: 'ENAEA', account: '123', password: 'abcdef' },
 ]);
 
-/***********************
- * 点击卡片跳转详情
- ***********************/
 const goDetail = (id: string) => {
   router.push(`/account/${id}`);
 };
 
-/***********************
- * 删除账号
- ***********************/
 const deleteAccount = (id: string) => {
   accounts.value = accounts.value.filter(acc => acc.id !== id);
   message.success(`账号 ${id} 已删除`);
 };
 
-/***********************
- * 查询功能
- ***********************/
 const searchText = ref('');
 
 const onSearch = () => {
@@ -130,15 +117,13 @@ const onSearch = () => {
 
 const filteredAccounts = computed(() => {
   if (!searchText.value) return accounts.value;
-  return accounts.value.filter(acc =>
-      acc.id.includes(searchText.value)
-  );
+  return accounts.value.filter(acc => acc.id.includes(searchText.value));
 });
-
 /***********************
- * 添加账号 Modal
+ * 添加账号
  ***********************/
 const addModalVisible = ref(false);
+const addLoading = ref(false); // <-- loading 状态
 
 const newAccount = ref({
   id: '',
@@ -158,8 +143,10 @@ const openAddModal = () => {
   addModalVisible.value = true;
 };
 
-// 确认添加
-const addAccount = () => {
+/***********************
+ * 发送 POST 请求
+ ***********************/
+const addAccount = async () => {
   if (!newAccount.value.id) {
     message.error("账号 ID 不能为空");
     return;
@@ -168,18 +155,47 @@ const addAccount = () => {
     message.error("登录账号不能为空");
     return;
   }
+  if (!newAccount.value.password) {
+    message.error("密码不能为空");
+    return;
+  }
 
-  accounts.value.push({
-    id: newAccount.value.id,
-    accountType: newAccount.value.accountType,
-    account: newAccount.value.account,
-    password: newAccount.value.password || '******',
-  });
+  addLoading.value = true; // 按钮进入加载
 
-  message.success("添加成功");
-  addModalVisible.value = false;
+  try {
+    // ⭐ 模拟服务器延迟 3 秒
+    // await new Promise(resolve => setTimeout(resolve, 3000));
+
+    const res = await addUser(
+        newAccount.value.accountType,
+        newAccount.value.account,
+        newAccount.value.password
+    );
+
+    if (res.data.code === 200) {
+      accounts.value.push({
+        id: newAccount.value.id,
+        accountType: newAccount.value.accountType,
+        account: newAccount.value.account,
+        password: newAccount.value.password || '******',
+      });
+
+      message.success("添加成功");
+      addModalVisible.value = false;
+    } else {
+      message.error(`添加失败：${res.data.msg || '未知错误'}`);
+    }
+
+  } catch (error) {
+    message.error("请求失败，请检查服务器或网络");
+  } finally {
+    addLoading.value = false; // 关闭加载状态
+  }
 };
+
+
 </script>
+
 <style scoped>
 /* 缩小卡片内部行间距 */
 .compact-form .ant-form-item {
