@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // import HelloWorld from './components/HelloWorld.vue'
-import Home from "./components/Home.vue";
+import HomeView from "./views/HomeView/HomeView.vue";
 </script>
 
 <template>
@@ -13,7 +13,7 @@ import Home from "./components/Home.vue";
 <!--    </a>-->
 <!--  </div>-->
 <!--  <HelloWorld msg="Vite + Vue" />-->
-  <Home></Home>
+  <HomeView></HomeView>
 </template>
 
 <style scoped>
