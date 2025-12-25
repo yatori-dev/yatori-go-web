@@ -22,8 +22,9 @@ type AccountDetailProps = {
     onBack: () => void
 }
 
-export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
+export function AccountDetail({account, onBack}: AccountDetailProps) {
     const [selectedCourses, setSelectedCourses] = useState<string[]>([])
+    const [courseList, setCourseList] = useState<Course[]>([])
     const [isProcessing, setIsProcessing] = useState(false)
     const [showAccount, setShowAccount] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
@@ -88,7 +89,7 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
     }
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedCourses(courses.map((c) => c.id))
+            setSelectedCourses(courseList.map((c) => c.id))
         } else {
             setSelectedCourses([])
         }
@@ -172,7 +173,7 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                                     <BookOpen className="h-3 w-3 sm:h-4 sm:w-4"/>
-                                    <span>{courses.length} 门课程</span>
+                                    <span>{courseList.length} 门课程</span>
                                 </div>
                             </div>
                         </div>
@@ -309,18 +310,18 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
                     <div className="flex items-center gap-2">
                         <Checkbox
                             id="select-all"
-                            checked={selectedCourses.length === courses.length && courses.length > 0}
+                            checked={selectedCourses.length === courseList.length && courseList.length > 0}
                             onCheckedChange={handleSelectAll}
                         />
                         <label htmlFor="select-all" className="text-xs sm:text-sm text-muted-foreground cursor-pointer">
-                            全选 ({selectedCourses.length}/{courses.length})
+                            全选 ({selectedCourses.length}/{courseList.length})
                         </label>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-2 sm:space-y-3">
-                {courses.map((course) => (
+                {courseList.map((course) => (
                     <Card
                         key={course.id}
                         className={`transition-all ${
@@ -370,7 +371,7 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
                 ))}
             </div>
 
-            {courses.length === 0 && (
+            {courseList.length === 0 && (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 text-center px-4">
                         <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-4"/>
