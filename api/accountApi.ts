@@ -33,7 +33,7 @@ export interface GetAccountsResponse {
   code: number
   message: string
   data: {
-    users: Array<{ uid:string;accountType: string;url: string; account: string; password: string }>
+    users: Array<{ uid:string;accountType: string;url: string; account: string; password: string; userConfigJson: string }>
     total: number
   }
 }

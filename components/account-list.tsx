@@ -15,6 +15,7 @@ export type Account = {
     url?: string
     account: string
     password: string
+    userConfigJson: string
     status: "active" | "inactive"
     courseCount: number
     lastLogin?: string
@@ -129,6 +130,7 @@ export function AccountList() {
                         url: user.url,
                         account: user.account,
                         password: user.password,
+                        userConfigJson: user.userConfigJson,
                         status: "active", // 默认状态为active
                         courseCount: 0, // 默认课程数量为0
                     }))
