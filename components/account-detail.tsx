@@ -12,6 +12,9 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {ArrowLeft, Play, Pause, User, Check, BookOpen, Loader2, Eye, EyeOff, KeyRound, Leaf, Trash2} from "lucide-react"
 import type {Account, Course} from "@/components/account-list"
 import { getPlatformName } from "@/utils/platformUtils"
+import {getCourseList} from "@/api/courseApi";
+import {addAccount as apiAddAccount} from "@/api";
+import {toast} from "@/components/ui/use-toast";
 
 type AccountDetailProps = {
     account: Account
@@ -53,6 +56,36 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
         setEmails(newEmails)
     }
 
+    const handleLoadCourses = async () => {
+        try {
+            // 调用API添加账号
+            const response = await getCourseList(account.uid)
+
+            if (response.code===200) {
+                // API添加成功
+                toast({
+                    title: "添加成功",
+                    description: response.message || "账号已成功添加",
+                    variant: "default",
+                })
+            } else {
+                // API添加失败
+                toast({
+                    title: "课程加载失败",
+                    description: response.message || "课程加载失败",
+                    variant: "destructive",
+                })
+            }
+        } catch (error) {
+            // 网络或其他错误
+            console.error("课程加载失败:", error)
+            toast({
+                title: "网络错误",
+                description: "无法连接到服务器，请稍后重试",
+                variant: "destructive",
+            })
+        }
+    }
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             setSelectedCourses(courses.map((c) => c.id))
@@ -284,23 +317,6 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
                         </label>
                     </div>
                 </div>
-                {/*<Button*/}
-                {/*    onClick={handleStart}*/}
-                {/*    disabled={selectedCourses.length === 0 || isProcessing}*/}
-                {/*    className="gap-2 w-full sm:w-auto"*/}
-                {/*>*/}
-                {/*    {isProcessing ? (*/}
-                {/*        <>*/}
-                {/*            <Loader2 className="h-4 w-4 animate-spin"/>*/}
-                {/*            处理中...*/}
-                {/*        </>*/}
-                {/*    ) : (*/}
-                {/*        <>*/}
-                {/*            <Play className="h-4 w-4"/>*/}
-                {/*            开始 ({selectedCourses.length})*/}
-                {/*        </>*/}
-                {/*    )}*/}
-                {/*</Button>*/}
             </div>
 
             <div className="space-y-2 sm:space-y-3">
