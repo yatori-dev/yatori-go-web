@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import {useState} from "react"
+import { useState } from "react"
 import {
     Dialog,
     DialogContent,
@@ -11,48 +11,116 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import {Button} from "@/components/ui/button"
-import {Input} from "@/components/ui/input"
-import {Label} from "@/components/ui/label"
-import {Eye, EyeOff} from "lucide-react"
-import type {Account} from "@/components/account-list"
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Eye, EyeOff } from "lucide-react"
+import type { Account } from "@/components/account-list"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { addAccount as apiAddAccount } from "@/api/accountApi"
+import { toast } from "@/components/ui/use-toast"
 
 type AddAccountDialogProps = {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onAdd: (account: Omit<Account, "id">) => void
+    onAdd: (account: Account) => void
 }
 
-export function AddAccountDialog({open, onOpenChange, onAdd}: AddAccountDialogProps) {
-    const [platform, setPlatform] = useState("")
+export function AddAccountDialog({ open, onOpenChange, onAdd }: AddAccountDialogProps) {
+    const [accountType, setAccountType] = useState("")
+    const [url, setUrl] = useState("")
     const [account, setAccount] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [email, setEmail] = useState("")
+    const [loading, setLoading] = useState(false)
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if ( !platform.trim()||!account.trim() || !password.trim() || !email.trim()) {
-            alert("请填写所有字段")
+        // 验证必填字段
+        if (!accountType.trim() || !account.trim() || !password.trim()) {
+            toast({
+                title: "表单验证失败",
+                description: "请填写所有必填字段",
+                variant: "destructive",
+            })
             return
         }
 
-        onAdd({
-            platform: platform.trim(),
-            account: account.trim(),
-            password: password.trim(),
-            status: "active",
-            courseCount: 0,
-            lastLogin: new Date().toLocaleString("zh-CN"),
-        })
+        // 当选择英华学堂时，需要验证url字段
+        if (accountType.trim() === "YINGHUA" && !url.trim()) {
+            toast({
+                title: "表单验证失败",
+                description: "请填写英华学堂的平台URL",
+                variant: "destructive",
+            })
+            return
+        }
 
-        setPlatform("")
-        setAccount("")
-        setPassword("")
-        setEmail("")
-        onOpenChange(false)
+        setLoading(true)
+
+        try {
+            // 调用API添加账号
+            const response = await apiAddAccount({
+                accountType: accountType.trim(),
+                url: accountType.trim() === "YINGHUA" ? url.trim() : "",
+                account: account.trim(),
+                password: password.trim(),
+            })
+
+            if (response.code===200) {
+                // API添加成功
+                toast({
+                    title: "添加成功",
+                    description: response.message || "账号已成功添加",
+                    variant: "default",
+                })
+
+                // 调用父组件的onAdd函数将新账号添加到本地列表
+                if (response.data) {
+                    onAdd(response.data)
+                } else {
+                    // 如果API没有返回完整的账号数据，创建一个简化版
+                    const newAccount = {
+                        accountType: accountType.trim(),
+                        account: account.trim(),
+                        password: password.trim(),
+                        status: "active",
+                        courseCount: 0,
+                        lastLogin: new Date().toLocaleString("zh-CN"),
+                        url: accountType.trim() === "YINGHUA" ? url.trim() : undefined,
+                        uid: Date.now().toString(), // 生成临时UID
+                    } as Account
+                    onAdd(newAccount)
+                }
+
+                // 清空表单
+                setAccountType("")
+                setUrl("")
+                setAccount("")
+                setPassword("")
+
+                // 关闭对话框
+                onOpenChange(false)
+            } else {
+                // API添加失败
+                toast({
+                    title: "添加失败",
+                    description: response.message || "添加账号失败",
+                    variant: "destructive",
+                })
+            }
+        } catch (error) {
+            // 网络或其他错误
+            console.error("添加账号失败:", error)
+            toast({
+                title: "网络错误",
+                description: "无法连接到服务器，请稍后重试",
+                variant: "destructive",
+            })
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -66,7 +134,7 @@ export function AddAccountDialog({open, onOpenChange, onAdd}: AddAccountDialogPr
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="account">平台</Label>
-                            <Select value={platform} onValueChange={setPlatform}>
+                            <Select value={accountType} onValueChange={setAccountType}>
                                 <SelectTrigger id="platform" className="w-full">
                                     <SelectValue placeholder="请选择账号平台" />
                                 </SelectTrigger>
@@ -76,6 +144,20 @@ export function AddAccountDialog({open, onOpenChange, onAdd}: AddAccountDialogPr
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* 仅当选择英华学堂时显示平台URL输入项 */}
+                        {accountType === "YINGHUA" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="url">平台URL</Label>
+                                <Input
+                                    id="url"
+                                    placeholder="请输入英华学堂的平台URL"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                />
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label htmlFor="account">账号</Label>
                             <Input
@@ -102,17 +184,20 @@ export function AddAccountDialog({open, onOpenChange, onAdd}: AddAccountDialogPr
                                     size="icon"
                                     className="absolute right-0 top-0 h-full w-10 hover:bg-transparent"
                                     onClick={() => setShowPassword(!showPassword)}
+                                    disabled={loading}
                                 >
-                                    {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
                             取消
                         </Button>
-                        <Button type="submit">添加账号</Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? "添加中..." : "添加账号"}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

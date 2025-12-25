@@ -1,15 +1,18 @@
 "use client"
 
-import {useState} from "react"
+import {useState, useEffect} from "react"
 import {AccountCard} from "@/components/account-card"
 import {AccountDetail} from "@/components/account-detail"
 import {Button} from "@/components/ui/button"
 import {Plus} from "lucide-react"
 import {AddAccountDialog} from "@/components/add-account-dialog"
+import {getAccounts, deleteAccountForUid as apiDeleteAccountForUid} from "@/api/accountApi"
+import {toast} from "@/components/ui/use-toast"
 
 export type Account = {
-    id: string
-    platform: string
+    uid: string
+    accountType: string
+    url?: string
     account: string
     password: string
     status: "active" | "inactive"
@@ -26,27 +29,6 @@ export type Course = {
     instructor: string
     category: string
 }
-
-const initialAccounts: Account[] = [
-    {
-        id: "1",
-        platform: "XUEXITONG",
-        account: "zhangsan2024",
-        password: "Pass@123456",
-        status: "active",
-        courseCount: 5,
-        lastLogin: "2025-01-15 14:30",
-    },
-    {
-        id: "2",
-        platform: "XUEXITONG",
-        account: "lisi2024",
-        password: "SecurePass999",
-        status: "active",
-        courseCount: 3,
-        lastLogin: "2025-01-14 09:15",
-    },
-]
 
 const coursesData: Record<string, Course[]> = {
     "1": [
@@ -128,9 +110,41 @@ const coursesData: Record<string, Course[]> = {
 }
 
 export function AccountList() {
-    const [accounts, setAccounts] = useState<Account[]>(initialAccounts)
+    const [accounts, setAccounts] = useState<Account[]>([])
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+    const [loading, setLoading] = useState(true)
+
+    // 获取账号列表数据
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            setLoading(true)
+            try {
+                const response = await getAccounts()
+                if (response.code === 200) {
+                    // 将API返回的数据转换为组件需要的Account类型
+                    const formattedAccounts: Account[] = response.data.users.map((user, index) => ({
+                        uid: user.uid, // 使用索引作为临时ID
+                        accountType: user.accountType,
+                        url: user.url,
+                        account: user.account,
+                        password: user.password,
+                        status: "active", // 默认状态为active
+                        courseCount: 0, // 默认课程数量为0
+                    }))
+                    setAccounts(formattedAccounts)
+                } else {
+                    console.error(response.message)
+                }
+            } catch (error) {
+                console.error("Failed to fetch accounts:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchAccounts()
+    }, [])
 
     const handleAccountClick = (account: Account) => {
         setSelectedAccount(account)
@@ -140,24 +154,44 @@ export function AccountList() {
         setSelectedAccount(null)
     }
 
-    const handleDeleteAccount = (id: string) => {
-        setAccounts(accounts.filter((acc) => acc.id !== id))
-        if (selectedAccount?.id === id) {
+    const handleDeleteAccount = async (uid: string) => {
+        try {
+            // 调用API删除账号
+            const response = await apiDeleteAccountForUid(uid)
+            if (response.code === 200) {
+                setAccounts(accounts.filter((acc) => acc.uid !== uid))
+            } else {
+                // API删除失败
+                console.error("删除失败:", response.message)
+                toast({
+                    title: "删除失败",
+                    description: response.message,
+                    variant: "destructive",
+                })
+            }
+        } catch (error) {
+            console.error("删除失败:", error)
+            toast({
+                title: "删除失败",
+                description: "网络错误，请稍后重试",
+                variant: "destructive",
+            })
+        }
+        if (selectedAccount?.uid === uid) {
             setSelectedAccount(null)
         }
     }
 
-    const handleAddAccount = (account: Omit<Account, "id">) => {
+    const handleAddAccount = (account: Account) => {
         const newAccount = {
-            ...account,
-            id: Date.now().toString(),
+            ...account
         }
         setAccounts([...accounts, newAccount])
     }
 
     if (selectedAccount) {
         return (
-            <AccountDetail account={selectedAccount} courses={coursesData[selectedAccount.id] || []}
+            <AccountDetail account={selectedAccount} courses={coursesData[selectedAccount.uid] || []}
                            onBack={handleBack}/>
         )
     }
@@ -175,18 +209,24 @@ export function AccountList() {
                 </Button>
             </div>
 
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {accounts.map((account) => (
-                    <AccountCard
-                        key={account.id}
-                        account={account}
-                        onClick={() => handleAccountClick(account)}
-                        onDelete={() => handleDeleteAccount(account.id)}
-                    />
-                ))}
-            </div>
+            {loading ? (
+                <div className="flex justify-center items-center py-12">
+                    <div className="text-muted-foreground">加载中...</div>
+                </div>
+            ) : (
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {accounts.map((account) => (
+                        <AccountCard
+                            key={account.uid}
+                            account={account}
+                            onClick={() => handleAccountClick(account)}
+                            onDelete={() => handleDeleteAccount(account.uid)}
+                        />
+                    ))}
+                </div>
+            )}
 
-            {accounts.length === 0 && (
+            {!loading && accounts.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
                     <div className="rounded-full bg-muted p-4 mb-4">
                         <Plus className="h-8 w-8 text-muted-foreground"/>

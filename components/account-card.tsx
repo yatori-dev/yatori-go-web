@@ -75,7 +75,7 @@ export function AccountCard({account, onClick, onDelete}: AccountCardProps) {
             <CardContent className="space-y-3 pb-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Leaf className="h-4 w-4"/>
-                    <span>{getPlatformName(account.platform)}</span>
+                    <span>{getPlatformName(account.accountType)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground flex-1 min-w-0">

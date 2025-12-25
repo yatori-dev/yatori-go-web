@@ -120,7 +120,7 @@ export function AccountDetail({account, courses, onBack}: AccountDetailProps) {
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                                     <Leaf className="h-3 w-3 sm:h-4 sm:w-4"/>
-                                    <span>{getPlatformName(account.platform)}</span>
+                                    <span>{getPlatformName(account.accountType)}</span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
                                     <div className="flex items-center gap-2 text-muted-foreground">
