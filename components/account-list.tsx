@@ -22,90 +22,55 @@ export type Account = {
 }
 
 export type Course = {
-    id: string
-    title: string
-    progress: number
+    courseId: string //课程ID
+    courseName: string //课程名称
+    progress: number //进度
     totalLessons: number
     completedLessons: number
-    instructor: string
-    category: string
+    instructor: string //授课老师
 }
 
 const coursesData: Record<string, Course[]> = {
     "1": [
         {
-            id: "c1",
-            title: "高等数学",
+            courseId: "c1",
+            courseName: "高等数学",
             progress: 75,
             totalLessons: 48,
             completedLessons: 36,
             instructor: "王教授",
-            category: "数学",
         },
         {
-            id: "c2",
-            title: "计算机网络",
+            courseId: "c2",
+            courseName: "计算机网络",
             progress: 60,
             totalLessons: 40,
             completedLessons: 24,
             instructor: "李老师",
-            category: "计算机",
         },
         {
-            id: "c3",
-            title: "数据结构",
+            courseId: "c3",
+            courseName: "数据结构",
             progress: 85,
             totalLessons: 45,
             completedLessons: 38,
             instructor: "赵老师",
-            category: "计算机",
         },
         {
-            id: "c4",
-            title: "线性代数",
+            courseId: "c4",
+            courseName: "线性代数",
             progress: 45,
             totalLessons: 36,
             completedLessons: 16,
-            instructor: "刘教授",
-            category: "数学",
+            instructor: "刘教授"
         },
         {
-            id: "c5",
-            title: "操作系统",
+            courseId: "c5",
+            courseName: "操作系统",
             progress: 30,
             totalLessons: 42,
             completedLessons: 13,
-            instructor: "陈老师",
-            category: "计算机",
-        },
-    ],
-    "2": [
-        {
-            id: "c6",
-            title: "英语听力",
-            progress: 90,
-            totalLessons: 30,
-            completedLessons: 27,
-            instructor: "Smith",
-            category: "语言",
-        },
-        {
-            id: "c7",
-            title: "大学物理",
-            progress: 55,
-            totalLessons: 50,
-            completedLessons: 28,
-            instructor: "张教授",
-            category: "物理",
-        },
-        {
-            id: "c8",
-            title: "Python编程",
-            progress: 70,
-            totalLessons: 35,
-            completedLessons: 25,
-            instructor: "周老师",
-            category: "编程",
+            instructor: "陈老师"
         },
     ],
 }

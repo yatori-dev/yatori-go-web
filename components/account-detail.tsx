@@ -1,6 +1,6 @@
 "use client"
 
-import {useState} from "react"
+import {useState, useEffect, useCallback} from "react"
 import { motion } from "framer-motion"
 import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardHeader} from "@/components/ui/card"
@@ -25,6 +25,7 @@ type AccountDetailProps = {
 export function AccountDetail({account, onBack}: AccountDetailProps) {
     const [selectedCourses, setSelectedCourses] = useState<string[]>([])
     const [courseList, setCourseList] = useState<Course[]>([])
+    const [isLoadingCourses, setIsLoadingCourses] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [showAccount, setShowAccount] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
@@ -38,6 +39,45 @@ export function AccountDetail({account, onBack}: AccountDetailProps) {
 
     // 通知邮箱列表状态
     const [emails, setEmails] = useState<string[]>([])
+
+    const handleLoadCourses = useCallback(async () => {
+        try {
+            setIsLoadingCourses(true)
+            const response = await getCourseList(account.uid)
+
+            if (response.code === 200) {
+                //赋值课程列表
+                setCourseList(response.data['courseList'])
+                toast({
+                    title: "课程加载成功",
+                    description: response.message || "课程列表已成功加载",
+                    variant: "default",
+                })
+            } else {
+                // API加载失败
+                toast({
+                    title: "课程加载失败",
+                    description: response.message || "课程列表加载失败",
+                    variant: "destructive",
+                })
+            }
+        } catch (error) {
+            // 网络或其他错误
+            console.error("课程加载失败:", error)
+            toast({
+                title: "网络错误",
+                description: "无法连接到服务器，请稍后重试",
+                variant: "destructive",
+            })
+        } finally {
+            setIsLoadingCourses(false)
+        }
+    }, [account.uid])
+
+    // 页面加载时自动加载课程列表
+    useEffect(() => {
+        handleLoadCourses()
+    }, [account.uid, handleLoadCourses])
 
     // 添加邮箱
     const handleAddEmail = () => {
@@ -57,39 +97,9 @@ export function AccountDetail({account, onBack}: AccountDetailProps) {
         setEmails(newEmails)
     }
 
-    const handleLoadCourses = async () => {
-        try {
-            // 调用API添加账号
-            const response = await getCourseList(account.uid)
-
-            if (response.code===200) {
-                // API添加成功
-                toast({
-                    title: "添加成功",
-                    description: response.message || "账号已成功添加",
-                    variant: "default",
-                })
-            } else {
-                // API添加失败
-                toast({
-                    title: "课程加载失败",
-                    description: response.message || "课程加载失败",
-                    variant: "destructive",
-                })
-            }
-        } catch (error) {
-            // 网络或其他错误
-            console.error("课程加载失败:", error)
-            toast({
-                title: "网络错误",
-                description: "无法连接到服务器，请稍后重试",
-                variant: "destructive",
-            })
-        }
-    }
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedCourses(courseList.map((c) => c.id))
+            setSelectedCourses(courseList.map((c) => c.courseId))
         } else {
             setSelectedCourses([])
         }
@@ -320,20 +330,27 @@ export function AccountDetail({account, onBack}: AccountDetailProps) {
                 </div>
             </div>
 
-            <div className="space-y-2 sm:space-y-3">
+            {isLoadingCourses ? (
+                <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <span className="ml-3 text-lg text-muted-foreground">加载课程中...</span>
+                </div>
+            ) : (
+                <>
+                    <div className="space-y-2 sm:space-y-3">
                 {courseList.map((course) => (
                     <Card
-                        key={course.id}
+                        key={course.courseId}
                         className={`transition-all ${
-                            selectedCourses.includes(course.id) ? "border-primary bg-primary/5" : "hover:border-primary/50"
+                            selectedCourses.includes(course.courseId) ? "border-primary bg-primary/5" : "hover:border-primary/50"
                         }`}
                     >
                         <CardContent className="p-3 sm:p-4">
                             <div className="flex items-start gap-3 sm:gap-4">
                                 <Checkbox
-                                    id={course.id}
-                                    checked={selectedCourses.includes(course.id)}
-                                    onCheckedChange={(checked) => handleSelectCourse(course.id, checked as boolean)}
+                                    id={course.courseId}
+                                    checked={selectedCourses.includes(course.courseId)}
+                                    onCheckedChange={(checked) => handleSelectCourse(course.courseId, checked as boolean)}
                                     className="mt-1"
                                 />
                                 <div className="flex-1 min-w-0">
@@ -341,19 +358,19 @@ export function AccountDetail({account, onBack}: AccountDetailProps) {
                                         className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-semibold text-sm sm:text-base text-foreground mb-1 break-words">
-                                                {course.title}
+                                                {course.courseName}
                                             </h4>
                                             <div
                                                 className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                                                 <span className="truncate">{course.instructor}</span>
-                                                <span className="hidden sm:inline">•</span>
-                                                <Badge variant="outline" className="text-xs">
-                                                    {course.category}
-                                                </Badge>
-                                                <span className="hidden sm:inline">•</span>
-                                                <span className="whitespace-nowrap">
-                          {course.completedLessons}/{course.totalLessons} 课时
-                        </span>
+                                                {/*<span className="hidden sm:inline">•</span>*/}
+                                                {/*<Badge variant="outline" className="text-xs">*/}
+                                                {/*    {course.category}*/}
+                                                {/*</Badge>*/}
+                        {/*                        <span className="hidden sm:inline">•</span>*/}
+                        {/*                        <span className="whitespace-nowrap">*/}
+                        {/*  {course.completedLessons}/{course.totalLessons} 课时*/}
+                        {/*</span>*/}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
@@ -379,6 +396,8 @@ export function AccountDetail({account, onBack}: AccountDetailProps) {
                         <p className="text-xs sm:text-sm text-muted-foreground">该账号还没有关联任何课程</p>
                     </CardContent>
                 </Card>
+                )}
+                </>
             )}
         </motion.div>
     )
